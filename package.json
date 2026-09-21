@@ -1,17 +1,17 @@
 {
-  "name": "tsdown-starter",
+  "name": "livestore-sync-rivet-actors",
   "type": "module",
   "version": "0.0.0",
-  "description": "A starter for creating a TypeScript package.",
-  "author": "Author Name <author.name@mail.com>",
+	"description": "LiveStore sync backend implementation using Rivet Actors",
+  "author": "Jason Antwi-Appah <hey@jasonaa.me>",
   "license": "MIT",
-  "homepage": "https://github.com/author/library#readme",
+  "homepage": "https://github.com/jasonappah/livestore-sync-rivet-actors#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/author/library.git"
+    "url": "git+https://github.com/jasonappah/livestore-sync-rivet-actors.git"
   },
   "bugs": {
-    "url": "https://github.com/author/library/issues"
+    "url": "https://github.com/jasonappah/livestore-sync-rivet-actors/issues"
   },
   "exports": {
     ".": "./dist/index.mjs",
@@ -29,10 +29,18 @@
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
+    "@livestore/common": "^0.4.0",
+    "@livestore/utils": "^0.4.0",
     "@types/node": "^26.1.1",
     "bumpp": "^11.1.0",
+    "effect": "^3.22.2",
     "tsdown": "^0.22.5",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "@livestore/common": "^0.4.0",
+    "@livestore/utils": "^0.4.0",
+    "effect": "^3.22.2"
   }
 }
