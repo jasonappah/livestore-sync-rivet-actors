@@ -2,7 +2,7 @@
  * The sync server for this example: a Rivet actor host running the LiveStore
  * sync actor.
  *
- * Run it with `pnpm --filter example-node-todo server` (which sets
+ * Run it with `pnpm --filter example-node-todo run server` (which sets
  * `RIVET_RUN_ENGINE=1`, making rivetkit spawn a local Rivet engine at
  * http://127.0.0.1:6420). Point `RIVET_ENDPOINT` at a hosted engine instead
  * for a real deployment.

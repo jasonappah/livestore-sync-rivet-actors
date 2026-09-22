@@ -3,7 +3,7 @@
  * `client-b`) on the same `storeId`, syncing through the Rivet sync actor
  * served by `src/server.ts`.
  *
- *   Terminal 1: pnpm --filter example-node-todo server
+ *   Terminal 1: pnpm --filter example-node-todo run server
  *   Terminal 2: pnpm --filter example-node-todo start
  *
  * What it checks:

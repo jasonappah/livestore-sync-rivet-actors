@@ -618,4 +618,4 @@ semantics, codec round-trips) is recorded in [`docs/spike-results.md`](./docs/sp
 
 ## License
 
-MIT © Jason Antwi-Appah
+Apache-2.0 © Jason Antwi-Appah
