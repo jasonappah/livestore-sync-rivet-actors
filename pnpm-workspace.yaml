@@ -1,3 +1,20 @@
+packages:
+  - '.'
+  - 'examples/*'
+
+# Keep this in sync with whatever `pnpm install` reports as "ignored build
+# scripts" — the rivetkit engine CLI / native module postinstalls must run.
 allowBuilds:
+  '@google/genai': true
   '@parcel/watcher': true
+  '@rivetkit/engine-cli': true
+  '@rivetkit/rivetkit-napi': true
+  '@rivetkit/rivetkit-wasm': true
+  better-sqlite3: true
+  cbor-extract: true
+  esbuild: true
+  koffi: true
   msgpackr-extract: true
+  protobufjs: true
+patchedDependencies:
+  '@rivetkit/effect@2.3.17': patches/@rivetkit__effect@2.3.17.patch
