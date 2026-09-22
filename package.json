@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "description": "LiveStore sync backend implementation using Rivet Actors",
   "author": "Jason Antwi-Appah <hey@jasonaa.me>",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "homepage": "https://github.com/jasonappah/livestore-sync-rivet-actors#readme",
   "repository": {
     "type": "git",
