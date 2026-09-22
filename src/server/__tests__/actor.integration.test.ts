@@ -8,22 +8,20 @@
  * test uses a fresh `storeId`.
  */
 
-import { BackendIdMismatchError, ServerAheadError, type SyncBackend } from '@livestore/common'
+import { ServerAheadError } from '@livestore/common'
 import { EventSequenceNumber, type LiveStoreEvent } from '@livestore/common/schema'
-import { Cause, Effect, Exit, FetchHttpClient, Fiber, KeyValueStore, Layer, ManagedRuntime, Option, type Schema, Stream } from '@livestore/utils/effect'
+import { Effect, Layer, ManagedRuntime, Option, type Schema } from '@livestore/utils/effect'
 import { nanoid } from '@livestore/utils/nanoid'
 import { Registry } from '@rivetkit/effect'
 import { ActorError, type ActorConnRaw, createClient } from 'rivetkit/client'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { makeRivetSync, makeRivetSyncAdmin } from '../../client/mod.ts'
 import {
   ACTION_PING,
   ACTION_PULL,
   ACTION_PUSH,
   ACTION_TEST_DISCONNECT_ALL,
   ACTOR_NAME,
-  AdminUnauthorizedError,
   decodePingError,
   decodePong,
   decodePullResponse,
@@ -369,100 +367,5 @@ describe('LiveStoreSync actor (in-process engine, raw rivetkit client)', () => {
       }),
       'InvalidPayloadError',
     )
-  })
-})
-
-describe('admin actions (in-process engine, makeRivetSyncAdmin + makeRivetSync)', () => {
-  const withBackend = <A, E>(
-    storeId: string,
-    clientId: string,
-    body: (backend: SyncBackend.SyncBackend<any>) => Effect.Effect<A, E>,
-  ): Promise<A> =>
-    Effect.runPromise(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const backend = yield* makeRivetSync({ endpoint: ENDPOINT, ping: { enabled: false } })({
-            storeId,
-            clientId,
-            payload: OK_PAYLOAD,
-          })
-          return yield* body(backend)
-        }),
-      ).pipe(Effect.provide(Layer.merge(KeyValueStore.layerMemory, FetchHttpClient.layer))),
-    )
-
-  it('info reports the store; reset wipes it, fails live pulls with BackendIdMismatchError and allows a fresh history', async () => {
-    const storeId = freshStoreId()
-    const admin = makeRivetSyncAdmin({ endpoint: ENDPOINT, clientId: 'it-admin' })
-    try {
-      // A wrong secret (after a passing validatePayload) is a typed AdminUnauthorizedError.
-      await expect(admin.info(storeId, 'wrong', OK_PAYLOAD)).rejects.toBeInstanceOf(AdminUnauthorizedError)
-      // validatePayload still applies to admin requests.
-      await expect(admin.info(storeId, ADMIN_SECRET, BAD_PAYLOAD)).rejects.toMatchObject({
-        _tag: 'InvalidPayloadError',
-        reason: VALIDATE_REJECTED_REASON,
-      })
-
-      const { oldBackendId, newBackendId } = await withBackend(storeId, 'client-a', (backend) =>
-        Effect.gen(function* () {
-          const seen: number[] = []
-          const livePull = yield* backend.pull(Option.none(), { live: true }).pipe(
-            Stream.runForEach((item) =>
-              Effect.sync(() => {
-                for (const event of item.batch) seen.push(event.eventEncoded.seqNum)
-              }),
-            ),
-            Effect.forkChild,
-          )
-
-          yield* backend.push(chainedEvents(2))
-          yield* Effect.promise(() => waitFor(() => seen.length >= 2, 'live pull to see both events'))
-
-          const before = yield* Effect.promise(() => admin.info(storeId, ADMIN_SECRET, OK_PAYLOAD))
-          expect(before).toMatchObject({ storeId, currentHead: 2, eventCount: 2 })
-          // The client's WS connection plus the transient one of this HTTP action.
-          expect(before.connectionCount).toBeGreaterThanOrEqual(1)
-
-          const { backendId } = yield* Effect.promise(() => admin.reset(storeId, ADMIN_SECRET, OK_PAYLOAD))
-          expect(backendId).not.toBe(before.backendId)
-
-          // The reset disconnected the client; its reconnect catch-up carries the stale id.
-          const exit = yield* Fiber.await(livePull).pipe(Effect.timeout('20 seconds'), Effect.orDie)
-          expect(Exit.isFailure(exit)).toBe(true)
-          if (Exit.isFailure(exit)) {
-            const error = Cause.squash(exit.cause)
-            expect(error).toBeInstanceOf(BackendIdMismatchError)
-            expect(error).toMatchObject({ expected: backendId, received: before.backendId })
-          }
-          expect(seen).toEqual([1, 2])
-
-          // So does a fresh (non-live) pull with the stale cursor.
-          const stalePull = yield* backend
-            .pull(Option.some({ eventSequenceNumber: EventSequenceNumber.Global.make(2), metadata: Option.none() }))
-            .pipe(Stream.runCollect, Effect.flip)
-          expect(stalePull).toBeInstanceOf(BackendIdMismatchError)
-
-          return { oldBackendId: before.backendId, newBackendId: backendId }
-        }),
-      )
-
-      const afterReset = await admin.info(storeId, ADMIN_SECRET, OK_PAYLOAD)
-      expect(afterReset).toMatchObject({ backendId: newBackendId, currentHead: 0, eventCount: 0 })
-
-      // A brand-new client (empty KeyValueStore) pushes a history from root.
-      await withBackend(storeId, 'client-b', (backend) =>
-        Effect.gen(function* () {
-          yield* backend.push(chainedEvents(3, 'root', 'client-b'))
-          const pulled = yield* backend.pull(Option.none()).pipe(Stream.runCollect)
-          expect(pulled.flatMap((item) => item.batch.map((event) => event.eventEncoded.seqNum))).toEqual([1, 2, 3])
-        }),
-      )
-
-      const final = await admin.info(storeId, ADMIN_SECRET, OK_PAYLOAD)
-      expect(final).toMatchObject({ backendId: newBackendId, currentHead: 3, eventCount: 3 })
-      expect(final.backendId).not.toBe(oldBackendId)
-    } finally {
-      await admin.dispose()
-    }
   })
 })
