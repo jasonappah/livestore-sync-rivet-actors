@@ -73,7 +73,35 @@ let client: ReturnType<typeof createClient>
 beforeAll(async () => {
   await runtime.runPromise(Effect.void)
   client = createClient({ endpoint: ENDPOINT })
+  await waitForRunnerRoutable()
 })
+
+/**
+ * `Registry.test` returns as soon as the runner process is up, but on a cold
+ * engine the namespace's runner config can lag by a few seconds
+ * (`actor.no_runner_config_configured`). Retry a trivial action on a
+ * throwaway store until it succeeds so the first real test never eats that
+ * window. Mirrors the readiness wait the conformance harness does in
+ * `tests/harness/engine.ts`.
+ */
+const waitForRunnerRoutable = async (timeoutMs = 45_000): Promise<void> => {
+  const started = Date.now()
+  const storeId = `it-ready-${nanoid()}`
+  let lastError: unknown
+  while (Date.now() - started < timeoutMs) {
+    try {
+      await client.getOrCreate(ACTOR_NAME, [storeId]).action({
+        name: ACTION_PING,
+        args: [encodePingRequest({ storeId, clientId: CLIENT_ID, payload: OK_PAYLOAD })],
+      })
+      return
+    } catch (error) {
+      lastError = error
+      await new Promise((resolve) => setTimeout(resolve, 500))
+    }
+  }
+  throw new Error(`runner did not become routable within ${timeoutMs}ms: ${String(lastError)}`)
+}
 
 afterAll(async () => {
   await client.dispose()
