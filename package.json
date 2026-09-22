@@ -2,9 +2,9 @@
   "name": "livestore-sync-rivet-actors",
   "type": "module",
   "version": "0.0.0",
-	"description": "LiveStore sync backend implementation using Rivet Actors",
+  "description": "LiveStore sync backend implementation using Rivet Actors",
   "author": "Jason Antwi-Appah <hey@jasonaa.me>",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "homepage": "https://github.com/jasonappah/livestore-sync-rivet-actors#readme",
   "repository": {
     "type": "git",
@@ -13,8 +13,20 @@
   "bugs": {
     "url": "https://github.com/jasonappah/livestore-sync-rivet-actors/issues"
   },
+  "sideEffects": false,
   "exports": {
-    ".": "./dist/index.mjs",
+    "./client": {
+      "types": "./dist/client.d.mts",
+      "default": "./dist/client.mjs"
+    },
+    "./server": {
+      "types": "./dist/server.d.mts",
+      "default": "./dist/server.mjs"
+    },
+    "./common": {
+      "types": "./dist/common.d.mts",
+      "default": "./dist/common.mjs"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -23,24 +35,51 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "test": "vitest",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:conformance": "vitest run --project conformance",
     "release": "bumpp",
-    "prepublishOnly": "pnpm run build"
-  },
-  "devDependencies": {
-    "@livestore/common": "^0.4.0",
-    "@livestore/utils": "^0.4.0",
-    "@types/node": "^26.1.1",
-    "bumpp": "^11.1.0",
-    "effect": "^3.22.2",
-    "tsdown": "^0.22.5",
-    "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "prepublishOnly": "pnpm run build",
+    "example:server": "pnpm --filter example-node-server start",
+    "example:todo:server": "pnpm --filter example-node-todo run server",
+    "example:todo": "pnpm --filter example-node-todo start"
   },
   "peerDependencies": {
-    "@livestore/common": "^0.4.0",
-    "@livestore/utils": "^0.4.0",
-    "effect": "^3.22.2"
+    "@livestore/common": "^0.5.0-dev.0",
+    "@livestore/utils": "^0.5.0-dev.0",
+    "@rivetkit/effect": "~2.3.17",
+    "effect": ">=4.0.0-rc.111 <4.0.0-rc.113",
+    "rivetkit": "~2.3.17"
+  },
+  "peerDependenciesMeta": {
+    "@rivetkit/effect": {
+      "optional": true
+    },
+    "rivetkit": {
+      "optional": false
+    }
+  },
+  "devDependencies": {
+    "@effect/opentelemetry": "4.0.0-rc.112",
+    "@effect/platform-browser": "4.0.0-rc.112",
+    "@effect/platform-bun": "4.0.0-rc.112",
+    "@effect/platform-node": "4.0.0-rc.112",
+    "@effect/platform-node-shared": "4.0.0-rc.112",
+    "@effect/vitest": "4.0.0-rc.112",
+    "@livestore/common": "0.5.0-dev.0",
+    "@livestore/utils": "0.5.0-dev.0",
+    "@opentelemetry/api": "1.9.0",
+    "@opentelemetry/resources": "2.2.0",
+    "@rivetkit/effect": "2.3.17",
+    "@standard-schema/spec": "1.1.0",
+    "@types/node": "^26.1.1",
+    "bumpp": "^11.1.0",
+    "effect": "4.0.0-rc.112",
+    "rivetkit": "2.3.17",
+    "tsdown": "^0.22.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }
