@@ -614,7 +614,7 @@ semantics, codec round-trips) is recorded in [`docs/spike-results.md`](./docs/sp
   nothing in LiveStore's runtime path depends on it.
 - **Property-based conformance cases run with a small budget.** The large-batch property from
   LiveStore's `tests/sync-provider` suite (`tests/sync-provider-properties.test.ts`) runs 8
-  fast-check cases per `pnpm test:conformance` without shrinking; raise it with `FC_NUM_RUNS` and
+  generated cases (Effect's `unstable/arbitrary`, no fast-check) per `pnpm test:conformance` without shrinking; raise it with `FC_NUM_RUNS` and
   replay a failure with `FC_SEED`.
 - Everything is pinned to pre-release LiveStore / Effect / rivetkit versions, and the `./server` entry
   needs a patched `@rivetkit/effect` (see above).
