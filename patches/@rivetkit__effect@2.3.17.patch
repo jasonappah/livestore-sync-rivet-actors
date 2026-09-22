@@ -307,6 +307,19 @@ index 4d6b039630d7b2fab704f6028f1a0633f17c92ae..674bcfb0c33bead6ff0fbc8bb48eb5c4
      reason: RivetErrorReason,
  }) {
      /** Marks this value as the top-level Rivet error wrapper for runtime guards. */
+diff --git a/dist/internal/logging.js b/dist/internal/logging.js
+index a428702429bc16207511e93bcd9fd5a991931c87..ba09b37eb023877f11aab22d8fca42dc997827e8 100644
+--- a/dist/internal/logging.js
++++ b/dist/internal/logging.js
+@@ -21,7 +21,7 @@ const RivetkitLevelByEffectLevel = {
+     ])),
+     All: "trace",
+ };
+-const rivetLogLevelFromEnv = Config.string("RIVET_LOG_LEVEL").pipe(Effect.option, Effect.map((maybeRivetLogLevel) => {
++const rivetLogLevelFromEnv = Config.String("RIVET_LOG_LEVEL").pipe(Effect.option, Effect.map((maybeRivetLogLevel) => {
+     if (Option.isNone(maybeRivetLogLevel))
+         return Option.none();
+     const parsed = RivetkitLog.LogLevelSchema.safeParse(maybeRivetLogLevel.value.toLowerCase());
 diff --git a/src/Action.ts b/src/Action.ts
 index 514a296d6a17b1f1e57061cd4de55915c6ac0a61..e576a6a737dec5fbf336f10880845304a5256eb9 100644
 --- a/src/Action.ts
@@ -657,3 +670,16 @@ index 75c19c0b040073eea51a66d2b8cab8074e5e132b..f40388f07fb1db56194fc3739d134977
  };
  
  export type Adapter<StateDefinition extends StateOptions.Any> = {
+diff --git a/src/internal/logging.ts b/src/internal/logging.ts
+index b71d65112a7e9806e95c40203b3e96f72e1953de..f0a831fcc5081e597475de8cfe69762ebe88faad 100644
+--- a/src/internal/logging.ts
++++ b/src/internal/logging.ts
+@@ -51,7 +51,7 @@ const RivetkitLevelByEffectLevel = {
+ 	All: "trace",
+ } as Record<LogLevel.LogLevel, RivetkitLog.LogLevel>;
+ 
+-const rivetLogLevelFromEnv = Config.string("RIVET_LOG_LEVEL").pipe(
++const rivetLogLevelFromEnv = Config.String("RIVET_LOG_LEVEL").pipe(
+ 	Effect.option,
+ 	Effect.map((maybeRivetLogLevel) => {
+ 		if (Option.isNone(maybeRivetLogLevel)) return Option.none();

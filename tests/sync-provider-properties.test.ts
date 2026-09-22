@@ -7,9 +7,9 @@
  * Generators: the same `LargeBatchScenarioSchema` upstream uses — a union of
  * `fewLarge` (20–28 events × 70–110 KB, pushed 6–12 at a time) and `manySmall`
  * (1 200–1 600 events × 0.9–1.2 KB, pushed 30–160 at a time), each ≥ 1 MB in
- * total. `@effect/vitest`'s `it.live.prop` turns the schema into a fast-check
- * arbitrary (`Schema.toArbitrary`, via the `fast-check` that `effect` bundles
- * as `effect/testing/FastCheck`). The largest event (~110 KB) stays well under
+ * total. `@effect/vitest`'s `it.live.prop` turns the schema into an
+ * `effect/unstable/arbitrary` generator (Effect's own property-testing engine,
+ * which replaced the bundled `fast-check` in effect 4.0.0-rc.113+). The largest event (~110 KB) stays well under
  * the harness client's `maxPushBytes` (900 000), so every scenario is
  * pushable; a 6–12-event push chunk of large events exceeds it, which
  * exercises the client's byte-based push splitting.
@@ -27,7 +27,7 @@
  *
  * Runs: {@link NUM_RUNS} (default 8; upstream uses 1). Each run moves 1–3 MB
  * through a real engine, so the budget is kept small; shrinking is disabled
- * (`endOnFailure`) because every shrink step would be another multi-MB round
+ * (`maxShrinks: 0`) because every shrink step would be another multi-MB round
  * trip. Reproduce a failure with the printed seed: `FC_SEED=<seed> FC_NUM_RUNS=1
  * pnpm test:conformance tests/sync-provider-properties.test.ts`.
  *
@@ -54,7 +54,7 @@ const envInt = (name: string): number | undefined => {
   return Number.isFinite(value) ? value : undefined
 }
 
-/** fast-check runs per provider (override with `FC_NUM_RUNS`). */
+/** Property runs per provider (override with `FC_NUM_RUNS`). */
 const NUM_RUNS = envInt('FC_NUM_RUNS') ?? 8
 const SEED = envInt('FC_SEED')
 
@@ -205,9 +205,9 @@ for (const { layer, name } of providerLayers) {
         }).pipe(withTestCtx()),
       {
         timeout: vitestTimeoutMs,
-        fastCheck: {
-          numRuns: NUM_RUNS,
-          endOnFailure: true,
+        arbitrary: {
+          runs: NUM_RUNS,
+          maxShrinks: 0,
           ...(SEED === undefined ? {} : { seed: SEED }),
         },
       },

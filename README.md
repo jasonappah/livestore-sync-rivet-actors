@@ -20,14 +20,16 @@ hooks and error semantics closely enough that swapping providers is a one-line c
 
 | Dependency | Version | Note |
 |---|---|---|
-| `@livestore/common`, `@livestore/utils` | `0.5.0-dev.0` | npm dist-tag `dev` |
-| `effect` and every `@effect/*` package | `4.0.0-rc.112` | **not** rc.113+ — see below |
+| `@livestore/common`, `@livestore/utils` | `0.0.0-snapshot-bf25b4d9b7bf0a8be73d61e68f8f2c8af439be2d` | npm dist-tag `snapshot` — exact pin, see below |
+| `effect` and every `@effect/*` package | `4.0.0-rc.117` | peer range `>=4.0.0-rc.113 <5` |
 | `rivetkit` | `2.3.17` | |
 | `@rivetkit/effect` | `2.3.17` | **requires a pnpm patch**, see below |
 
-**Why `effect@4.0.0-rc.112` exactly.** rc.113 removed `effect/testing/FastCheck`, which
-`@livestore/utils@0.5.0-dev.0` still imports — installing rc.113 or later breaks LiveStore itself.
-Pin `effect` *and* all `@effect/*` packages to `4.0.0-rc.112` until LiveStore moves.
+**Why a LiveStore snapshot build.** rc.113 removed `effect/testing/FastCheck`, which
+`@livestore/utils@0.5.0-dev.0` imports at module load, so `0.5.0-dev.0` only works on rc.112. The
+`snapshot` build `0.0.0-snapshot-bf25b4d9b7bf0a8be73d61e68f8f2c8af439be2d` is built against rc.113 and no longer imports it. Snapshot versions are
+unstable and do not match `^0.5.0-dev.0`, so the peers are exact pins: consumers must install the same
+snapshot. See [`docs/upgrade-rc117.md`](./docs/upgrade-rc117.md) for the full list of changes.
 
 ### The `@rivetkit/effect` patch
 
@@ -45,6 +47,8 @@ This repo ships the patch at [`patches/@rivetkit__effect@2.3.17.patch`](./patche
    `['name', 'icon']` to **every key of rivetkit's `ActorOptionsInput`**, so runtime tunables such as
    `sleepTimeout`, `sleepGracePeriod` and `actionTimeout` passed to `Actor.toLayer(…, options)` reach
    `Rivetkit.actor`. Upstream silently drops them; this is what makes the `actor` option below work.
+5. `src/internal/logging.ts` (and `dist/internal/logging.js`): `Config.string(…)` → `Config.String(…)`
+   (renamed in effect rc.113+; without it `@rivetkit/effect` throws at module load).
 
 **Consumers of the `./server` entry need the same patch** until upstream targets an Effect 4 rc.
 Copy the patch file into your own repo and register it:
@@ -82,8 +86,9 @@ pnpm add livestore-sync-rivet-actors
 Peer dependencies of this package:
 
 ```sh
-pnpm add effect@4.0.0-rc.112 rivetkit@2.3.17 \
-  @livestore/common@0.5.0-dev.0 @livestore/utils@0.5.0-dev.0
+pnpm add effect@4.0.0-rc.117 rivetkit@2.3.17 \
+  @livestore/common@0.0.0-snapshot-bf25b4d9b7bf0a8be73d61e68f8f2c8af439be2d \
+  @livestore/utils@0.0.0-snapshot-bf25b4d9b7bf0a8be73d61e68f8f2c8af439be2d
 # only for the ./server entry (patched, see above)
 pnpm add -D @rivetkit/effect@2.3.17
 ```
@@ -94,9 +99,9 @@ pnpm add -D @rivetkit/effect@2.3.17
 (they are what LiveStore itself requires, not this package):
 
 ```sh
-pnpm add @effect/opentelemetry@4.0.0-rc.112 @effect/platform-browser@4.0.0-rc.112 \
-  @effect/platform-bun@4.0.0-rc.112 @effect/platform-node@4.0.0-rc.112 \
-  @effect/platform-node-shared@4.0.0-rc.112 @effect/vitest@4.0.0-rc.112 \
+pnpm add @effect/opentelemetry@4.0.0-rc.117 @effect/platform-browser@4.0.0-rc.117 \
+  @effect/platform-bun@4.0.0-rc.117 @effect/platform-node@4.0.0-rc.117 \
+  @effect/platform-node-shared@4.0.0-rc.117 @effect/vitest@4.0.0-rc.117 \
   @opentelemetry/api@^1.9.0 @opentelemetry/resources@^2.2.0 @standard-schema/spec@^1.1.0
 ```
 
@@ -603,13 +608,13 @@ semantics, codec round-trips) is recorded in [`docs/spike-results.md`](./docs/sp
 - **`sleepTimeout` & co. need the `@rivetkit/effect` patch** (item 4 above); with an unpatched SDK the
   `actor` option is silently ignored and rivetkit's defaults apply.
 - **`SyncBackend.isSyncBackend` returns `false`** for this backend. The guard in
-  `@livestore/common@0.5.0-dev.0` requires `connect` and `ping` to be *functions*, while the
+  `@livestore/common` (still in the snapshot build) requires `connect` and `ping` to be *functions*, while the
   `SyncBackend` type declares them as `Effect` values (objects in Effect 4). LiveStore's own
   `makeMockSyncBackend` fails the same guard — it is an upstream staleness, not a shape mismatch, and
   nothing in LiveStore's runtime path depends on it.
 - **Property-based conformance cases run with a small budget.** The large-batch property from
   LiveStore's `tests/sync-provider` suite (`tests/sync-provider-properties.test.ts`) runs 8
-  fast-check cases per `pnpm test:conformance` without shrinking; raise it with `FC_NUM_RUNS` and
+  generated cases (Effect's `unstable/arbitrary`, no fast-check) per `pnpm test:conformance` without shrinking; raise it with `FC_NUM_RUNS` and
   replay a failure with `FC_SEED`.
 - Everything is pinned to pre-release LiveStore / Effect / rivetkit versions, and the `./server` entry
   needs a patched `@rivetkit/effect` (see above).
