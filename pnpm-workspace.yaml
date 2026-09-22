@@ -18,3 +18,11 @@ allowBuilds:
   protobufjs: true
 patchedDependencies:
   '@rivetkit/effect@2.3.17': patches/@rivetkit__effect@2.3.17.patch
+# @livestore/adapter-node has no build at the LiveStore snapshot we use
+# (0.0.0-snapshot-bf25b4d9b7bf0a8be73d61e68f8f2c8af439be2d); keep 0.5.0-dev.0 but force its
+# @livestore/* deps onto the snapshot so only one (FastCheck-free) utils ships.
+overrides:
+  '@livestore/adapter-node>@livestore/common': 0.0.0-snapshot-bf25b4d9b7bf0a8be73d61e68f8f2c8af439be2d
+  '@livestore/adapter-node>@livestore/utils': 0.0.0-snapshot-bf25b4d9b7bf0a8be73d61e68f8f2c8af439be2d
+  '@livestore/adapter-node>@livestore/webmesh': 0.0.0-snapshot-bf25b4d9b7bf0a8be73d61e68f8f2c8af439be2d
+  '@livestore/adapter-node>@livestore/sqlite-wasm': 0.0.0-snapshot-bf25b4d9b7bf0a8be73d61e68f8f2c8af439be2d
